@@ -12,6 +12,7 @@ from threading import Thread,Lock
 from mrdict import modeldict
 import shlex
 import tempfile
+import time
 
 # Global output directory root prefix
 
@@ -165,6 +166,12 @@ def report(message):
      sys.stdout.flush()
      mutex.release()
 
+def safe_write_script(string,filehandle):
+    mutex.acquire()
+    filehandle.write(string)
+    filehandle.close()
+    mutex.release()
+
 class ScaToMtzConvertor(Thread):
     def __init__(self, in_queue, out_queue):
         Thread.__init__(self)
@@ -202,6 +209,7 @@ class PhaserRunOrchestrator(Thread):
                 break
             runner = PhaserRun(mtzfile)
             runner.run()
+            time.sleep(2)
             # This has the root of the output files
          #   print "PUTTING TO OUT PATH" , runner.outfilepath
             self.out_queue.put(runner.outfilepath)
@@ -241,10 +249,9 @@ eof""".format(self=self)
         
     def run(self):
         comfile = open(os.path.join(os.path.join(auriga_output_directory_root,self.proj_name),self.proj_name  + "_phaser_input.sh"),"w")
-        comfile.write(self.mycomfile)
-        comfile.close()
+        safe_write_script(self.mycomfile,comfile)
         os.chmod(comfile.name,0755)
-        subprocess.call(comfile.name)
+        subprocess.call([comfile.name])
    #     print "PHASER for {self.proj_name} DONE {self.inputmtzpath} Processed . Files written to {self.outfilepath}".format(self=self)
         
         
@@ -352,10 +359,9 @@ if ($status) exit
 end
 """.format(self=self)
         self.mycomfile = open(os.path.join(self.outputdir,self.proj_name + "_refmac5_input.sh"),"w")
-        self.mycomfile.write(self.comstring)
-        self.mycomfile.close()
+        safe_write_script(self.comstring,self.mycomfile)
         os.chmod(self.mycomfile.name,0755)
-        subprocess.call(self.mycomfile.name)
+        subprocess.call([self.mycomfile.name])
     
     
 class Refmac5RunOrchestrator(Thread):
@@ -371,16 +377,16 @@ class Refmac5RunOrchestrator(Thread):
             my_mtz = self.in_queue.get()
             if my_mtz is None:
                 break
-
             runner = Refmac5Runner(my_mtz)
             runner.run()
+            time.sleep(2)
             self.out_queue.put(my_mtz)
             
 scafile_in_queue = Queue()
 phaser_in_queue = Queue()
 mutex = Lock()
 
-THREAD_COUNT = 5
+THREAD_COUNT = 1
 worker_list = []
 
 for i in range(THREAD_COUNT):
