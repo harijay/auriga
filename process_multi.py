@@ -9,10 +9,13 @@ import sys
 import subprocess
 from Queue import Queue
 from threading import Thread,Lock
+import threading
 from mrdict import modeldict
 import shlex
 import tempfile
 import time
+
+exitflag = 0
 
 # Global output directory root prefix
 
@@ -104,7 +107,6 @@ export HARVESTHOME
 #
 #  (You can use the same procedure whether or not you have 
 #  anomalous data.)
-
 scalepack2mtz hklin {self.filename}  hklout {outfile_prefix}_junk1.mtz <<eof
 name project {self.proj_name} crystal {self.proj_name} dataset {self.proj_name}
 symm {self.spag}
@@ -182,8 +184,8 @@ class ScaToMtzConvertor(Thread):
             path = self.in_queue.get()
             sys.stdout.flush()
             if path is None:
-                self.out_queue.put(None)
-                break
+                self.in_queue.task_done()
+                self.join()
        #     print "GOTPATH" , path
             report("Converting %s" % path)
             myfile = scalatomtz(path)
@@ -205,8 +207,8 @@ class PhaserRunOrchestrator(Thread):
         while True:
             mtzfile = self.in_queue.get()
             if mtzfile is None:
-                self.out_queue.put(None)
-                break
+                self.in_queue.task_done()
+                self.join()
             runner = PhaserRun(mtzfile)
             runner.run()
             time.sleep(2)
@@ -376,7 +378,8 @@ class Refmac5RunOrchestrator(Thread):
         while True:
             my_mtz = self.in_queue.get()
             if my_mtz is None:
-                break
+                self.in_queue.task_done()
+                self.join()
             runner = Refmac5Runner(my_mtz)
             runner.run()
             time.sleep(2)
@@ -386,7 +389,7 @@ scafile_in_queue = Queue()
 phaser_in_queue = Queue()
 mutex = Lock()
 
-THREAD_COUNT = 1
+THREAD_COUNT = 2
 worker_list = []
 
 for i in range(THREAD_COUNT):
@@ -406,16 +409,16 @@ if __name__ == '__main__':
 for i in range(THREAD_COUNT):
     scafile_in_queue.put(None)      
     
-for worker in worker_list:
-    worker.join()  
+#for worker in worker_list:
+#    worker.join()  
 
 for i in range(THREAD_COUNT):
     phaser_run = PhaserRunOrchestrator(phaser_in_queue,refmac5_in_queue)
     phaser_run.start()
     phaser_worker_list.append(phaser_run)
     
-for phaserrunner in phaser_worker_list:
-    phaserrunner.join()
+#for phaserrunner in phaser_worker_list:
+#    phaserrunner.join()
 
 
 refmac5_worker_list = []
@@ -427,8 +430,11 @@ for i in range(THREAD_COUNT):
     refmac5_run.start()
     refmac5_worker_list.append(refmac5_run)
 
-for refmac5_runner in refmac5_worker_list:
-    refmac5_runner.join()
+if threading.active_count() == 1:
+    exit()
+
+#for refmac5_runner in refmac5_worker_list:
+#    refmac5_runner.join()
     
 
 # with 4        
