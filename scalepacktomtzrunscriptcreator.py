@@ -51,10 +51,11 @@ class ScalePackToMtzRunscriptCreator(object):
     
     def create_and_return_runscript_file(self):
         scrfile1 = open(os.path.join(self.outputdir,"%s_1.sh" % self.proj_name),"w")
-        scrfile2 = open(os.path.join(self.outputdir,"%s_2.sh" % self.proj_name),"w")
-        scrfile3 = open(os.path.join(self.outputdir,"%s_3.sh" % self.proj_name),"w")
-        scrfile4 = open(os.path.join(self.outputdir,"%s_4.sh" % self.proj_name),"w")
         outfile_prefix  = os.path.join(self.outputdir,self.proj_name)
+        # scrfile2 = open(os.path.join(self.outputdir,"%s_2.sh" % self.proj_name),"w")
+        # scrfile3 = open(os.path.join(self.outputdir,"%s_3.sh" % self.proj_name),"w")
+        # scrfile4 = open(os.path.join(self.outputdir,"%s_4.sh" % self.proj_name),"w")
+    
       #  print "PROJ_NAME_OUTPREFIX set to ", outfile_prefix ,"DIRECTORY"
         
         scr1 =  """#!/bin/sh 
@@ -62,8 +63,8 @@ class ScalePackToMtzRunscriptCreator(object):
 # bug # 3192 - run-all examples produce harvest files - well to counteract
 # this here set HARVESTHOME to somewhere in $CCP4_SCR
 
-HARVESTHOME=${self.outputdir}
-export HARVESTHOME
+#HARVESTHOME=${self.outputdir}
+#export HARVESTHOME
 
 #   from /home/hari/official_ccp4/ccp4-6.1.3/examples/unix/runnable
 #   SCALEPACK2MTZ
@@ -81,9 +82,7 @@ name project {self.proj_name} crystal {self.proj_name} dataset {self.proj_name}
 symm {self.spag}
 end
 eof
-""".format(self = self,outfile_prefix=outfile_prefix)
-        
-        scr2 = """#!/bin/sh
+
 # convert Is to Fs and Ds.
 
 truncate hklin {outfile_prefix}_junk1.mtz hklout {outfile_prefix}_junk2.mtz <<eof
@@ -93,16 +92,7 @@ nresidue {self.number_of_residues_in_asu}
 labout  F=FP_{self.proj_name} SIGF=SIGFP_{self.proj_name}
 end
 eof
-""".format(self = self,outfile_prefix=outfile_prefix)
-        
-        scr4 = """#!/bin/sh
-# Add free r to reflections
-freerflag hklin  {outfile_prefix}_trn.mtz hklout  {outfile_prefix}_trnfreeR.mtz <<eof
-FREERFRAC 0.05
-END
-eof""".format(self=self, outfile_prefix = outfile_prefix)
 
-        scr3 = """#!/bin/sh
 # get correct sort order and asymmetric unit
 
 cad hklin1 {outfile_prefix}_junk2.mtz hklout {outfile_prefix}_trn.mtz <<eof
@@ -110,9 +100,11 @@ labi file 1 ALL
 sort H K L
 end
 eof
-#""".format(self = self,outfile_prefix=outfile_prefix)
+
+# Add free r to reflections
+freerflag hklin  {outfile_prefix}_trn.mtz hklout  {outfile_prefix}_trnfreeR.mtz <<eof
+FREERFRAC 0.05
+END
+eof""".format(self=self, outfile_prefix = outfile_prefix)
         safe_write_script(scr1,scrfile1)
-        safe_write_script(scr2,scrfile2)
-        safe_write_script(scr3,scrfile3)
-        safe_write_script(scr4,scrfile4)
-        return (scrfile1.name,scrfile2.name,scrfile3.name,scrfile4.name)
+        return scrfile1.name

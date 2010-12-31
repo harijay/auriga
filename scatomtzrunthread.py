@@ -22,11 +22,10 @@ class ScaToMtzRunThread(Thread):
 #                self.in_queue.task_done()
 #                self.join()
             myfile = ScalePackToMtzRunscriptCreator(path,self.auriga_output_directory_root)
-            scrfiles = myfile.create_and_return_runscript_file()
+            scrfile = myfile.create_and_return_runscript_file()
             try:
-                for index,file in enumerate(scrfiles):
-                    subprocess.check_call([file])
-                    time.sleep(2)
+                subprocess.check_call([scrfile])
+                time.sleep(2)
             except subprocess.CalledProcessError:
                 self.in_queue.put(path)
 
