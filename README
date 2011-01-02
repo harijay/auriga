@@ -1,0 +1,9 @@
+If you want to carry out a simple crystallographic workflow wherein you take a series of processed xtal data in the form of sca files and then 
+1) convert them from sca to mtz
+2) run phaser using a pre-configured search: i.e hardcode the pdb model to be used and number of copies of the single ensemble to search for
+3) run a single round of restrained refinement in  Refmac to produce refined output pdb and weighted maps
+
+Then the script generators in this project will carry out that workflow in a multithreaded manner.
+
+
+This code is very much work in progress and experimental

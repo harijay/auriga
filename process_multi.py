@@ -19,7 +19,7 @@ from phaserrunthread import PhaserRunThread
 
 
 auriga_output_directory_root = None
-THREAD_COUNT = 8
+THREAD_COUNT = 2
 
 
 scafile_in_queue = Queue()
