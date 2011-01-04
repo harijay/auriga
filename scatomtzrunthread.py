@@ -15,9 +15,9 @@ class ScaToMtzRunThread(Thread):
         self.auriga_output_directory_root = auriga_output_directory_root
         sys.excepthook = self.report_error
         
-    def report_error(type,value,traceback):
+    def report_error(type=None,value=None,traceback=None):
         if type is OSError:
-            print value.filename
+            print ("***FilenameError***",value.filename)
             sys.__excepthook__(type,value,traceback)
         else:
             sys.__excepthook__(type,value,traceback)
@@ -26,16 +26,16 @@ class ScaToMtzRunThread(Thread):
     def run(self):
         while True:
             path = self.in_queue.get()
-#            sys.stdout.flush()
-#            if path is None:
-#                self.in_queue.task_done()
-#                self.join()
             myfile = ScalePackToMtzRunscriptCreator(path,self.auriga_output_directory_root)
             scrfile = myfile.create_and_return_runscript_file()
-            try:
-                subprocess.check_call([scrfile],close_fds=True)
+            time.sleep(2)
+	    try:
+                subprocess.Popen([scrfile],close_fds=True).wait()
                 time.sleep(2)
             except subprocess.CalledProcessError:
                 self.in_queue.put(path)
-            self.out_queue.put(myfile.mtzoutpath())
+            except OSError:
+                self.in_queue.put(path)
+	    self.out_queue.put(myfile.mtzoutpath())
+            self.in_queue.task_done()
             

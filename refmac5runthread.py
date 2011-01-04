@@ -14,10 +14,10 @@ class Refmac5RunThread(Thread):
     def run(self):
         while True:
             my_mtz = self.in_queue.get()
-#            if my_mtz is None:
-#                self.in_queue.task_done()
-#                self.join()
             runscript = Refmac5RunScriptCreator(my_mtz,self.auriga_output_directory_root).write_runscript_and_return_name()
-            subprocess.call([runscript])
-            time.sleep(2)
-            self.out_queue.put(my_mtz)
+            try:
+	    	subprocess.check_call([runscript],close_fds=True,bufsize=0)
+            except subprocess.CalledProcessError:
+                self.in_queue.put(my_mtz)
+	    self.out_queue.put(my_mtz)
+            self.in_queue.task_done()

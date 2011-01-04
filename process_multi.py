@@ -11,7 +11,6 @@ from threading import Thread
 import threading
 from mrdict import modeldict
 import shlex
-import tempfile
 from process_multi_util_functions import report,safe_write_script
 from scatomtzrunthread import ScaToMtzRunThread
 from refmac5runthread import Refmac5RunThread
@@ -19,8 +18,7 @@ from phaserrunthread import PhaserRunThread
 
 
 auriga_output_directory_root = None
-THREAD_COUNT = 2
-
+THREAD_COUNT = 8
 
 scafile_in_queue = Queue()
 phaser_in_queue = Queue()
@@ -50,22 +48,56 @@ def main():
         auriga_output_directory_root=os.path.abspath(os.curdir)
             
     sca_listfile = options.scalist
+    master_list_file = open(sca_listfile,"r")    
+    for i in master_list_file:
+        scafile_in_queue.put(i)
     
-    for i in open(sca_listfile,"r"):
-        scafile_in_queue.put(i)        
-    thread_list  = []
+    master_list_file.close()        
     
+    scala_thread_list  = []
+    phaser_thread_list = []
+    refmac5_thread_list = []
+
     for i in range(THREAD_COUNT):
         scala_worker = ScaToMtzRunThread(scafile_in_queue, phaser_in_queue,auriga_output_directory_root)
         phaser_worker = PhaserRunThread(phaser_in_queue,refmac5_in_queue,auriga_output_directory_root)
         refmac5_worker = Refmac5RunThread(refmac5_in_queue,refmac5_out_queue,auriga_output_directory_root)
-        thread_list.append(scala_worker)
-        thread_list.append(phaser_worker)
-        thread_list.append(refmac5_worker)
+        scala_thread_list.append(scala_worker)
+        phaser_thread_list.append(phaser_worker)
+        refmac5_thread_list.append(refmac5_worker)
 
-    for worker in thread_list:
+    for worker in scala_thread_list:
+        worker.start()
+    scafile_in_queue.join()
+    
+    for worker in phaser_thread_list:
         worker.start()
     
+    phaser_in_queue.join()
+    print "*****All DONE Phaser*****"
+    
+    for worker in refmac5_thread_list:
+        worker.start()
+
+    refmac5_in_queue.join()
+    scala_thread_list
+
+    
+    while not refmac5_out_queue.empty(): 
+        done_file = refmac5_out_queue.get()
+        print "DONE:%s" % done_file
+        refmac5_out_queue.task_done()
+
+    for worker in scala_thread_list:
+        worker.join()
+    for worker in phaser_thread_list:
+        worker.join()
+    for worker in refmac5_thread_list:
+        worker.join()
+
+    exit()
+	                        
+ 
 if __name__ == '__main__':
     main()
     
