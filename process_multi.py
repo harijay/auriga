@@ -65,27 +65,23 @@ def main():
         scala_thread_list.append(scala_worker)
         phaser_thread_list.append(phaser_worker)
         refmac5_thread_list.append(refmac5_worker)
+        scala_worker.start()
+        phaser_worker.start()
+        refmac5_worker.start()
+        
+    for i in range(THREAD_COUNT):
+        scafile_in_queue.put(None)
 
-    for worker in scala_thread_list:
-        worker.start()
     scafile_in_queue.join()
-    
-    for worker in phaser_thread_list:
-        worker.start()
-    
     phaser_in_queue.join()
-    print "*****All DONE Phaser*****"
-    
-    for worker in refmac5_thread_list:
-        worker.start()
-
     refmac5_in_queue.join()
+    
 
     while not refmac5_out_queue.empty(): 
         done_file = refmac5_out_queue.get()
         print "DONE:%s" % done_file
         refmac5_out_queue.task_done()
-        print "LEFT TO PROC",refmac5_out_queue.qsize(),
+
 
     refmac5_out_queue.join()
     
