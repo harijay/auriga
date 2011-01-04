@@ -80,21 +80,22 @@ def main():
         worker.start()
 
     refmac5_in_queue.join()
-    scala_thread_list
 
-    
     while not refmac5_out_queue.empty(): 
         done_file = refmac5_out_queue.get()
         print "DONE:%s" % done_file
         refmac5_out_queue.task_done()
+        print "LEFT TO PROC",refmac5_out_queue.qsize(),
 
+    refmac5_out_queue.join()
+    
     for worker in scala_thread_list:
         worker.join()
     for worker in phaser_thread_list:
         worker.join()
     for worker in refmac5_thread_list:
         worker.join()
-
+    
     exit()
 	                        
  

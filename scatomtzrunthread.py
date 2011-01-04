@@ -24,18 +24,20 @@ class ScaToMtzRunThread(Thread):
 
             
     def run(self):
-        while True:
+        while not self.in_queue.empty():
             path = self.in_queue.get()
             myfile = ScalePackToMtzRunscriptCreator(path,self.auriga_output_directory_root)
             scrfile = myfile.create_and_return_runscript_file()
             time.sleep(2)
-	    try:
+            try:
                 subprocess.Popen([scrfile],close_fds=True).wait()
-                time.sleep(2)
+                #                time.sleep(2)
             except subprocess.CalledProcessError:
                 self.in_queue.put(path)
+                #                self.in_queue.task_done()
             except OSError:
                 self.in_queue.put(path)
-	    self.out_queue.put(myfile.mtzoutpath())
+                #                self.in_queue.task_done()
+            self.out_queue.put(myfile.mtzoutpath())
             self.in_queue.task_done()
-            
+
