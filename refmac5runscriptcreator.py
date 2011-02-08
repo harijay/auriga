@@ -9,6 +9,7 @@ class Refmac5RunScriptCreator(object):
     def __init__(self,phaseroutput_root,auriga_output_directory_root):
         self.mtzfile = phaseroutput_root.strip() + ".1.mtz"
         self.pdbfile = phaseroutput_root.strip() + ".1.pdb"
+        self.phaseroutput_root = phaseroutput_root.strip()
         self.proj_name = os.path.split(phaseroutput_root)[-1]
         self.auriga_output_directory_root = auriga_output_directory_root
         self.outputdir = os.path.join(self.auriga_output_directory_root,self.proj_name)
