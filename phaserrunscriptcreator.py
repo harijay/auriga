@@ -27,9 +27,10 @@ TITLE {self.proj_name} phaser run automatic
 MODE MR_AUTO
 HKLIn {self.inputmtzpath}
 LABIn F=FP_{self.proj_name} SIGF=SIGFP_{self.proj_name}
-ENSEmble 1    PDBfile {self.pdb_path} IDENtity 0.99
-COMPosition PROTein MW 28853 NUM {self.num_copies} #beta
+ENSEmble 1    PDBfile {self.pdb_path} RMS 1.2
+COMPosition PROTein MW 14200 NUM {self.num_copies} #beta
 SEARch ENSEmble 1 NUM {self.num_copies}
+PACK SELECT ALLOW
 ROOT {self.outfilepath} # not the default
 eof""".format(self=self)
         except KeyError:

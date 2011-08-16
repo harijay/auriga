@@ -40,7 +40,12 @@ class ScalePackToMtzRunscriptCreator(object):
         self.file.readline()
         cell_line =  self.file.readline().split()
      #   print "CELL LINE" , cell_line
-        return cell_line[-1]
+        spag = cell_line[-1]
+        if "r" in spag:
+            newspag = spag.replace("r","h")
+            print("SPAG CHANGED:",newspag)
+            spag = newspag
+        return spag
     
     def describe(self):
         description = """Scalepack file:{self.filename},{self.spag},{self.cell_dimensions_string}""".format(self=self)
